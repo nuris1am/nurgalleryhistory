@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMIÈRE — Image Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a08;
+    --surface: #111110;
+    --border: #1e1e1b;
+    --text: #e8e4dc;
+    --muted: #5a5850;
+    --accent: #c9a96e;
+    --accent2: #8fb5a0;
+    --white: #f5f1eb;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 48px;
+    background: linear-gradient(to bottom, rgba(10,10,8,0.95), transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.15em;
+    color: var(--white);
+  }
+  .logo span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 8px 16px;
+  }
+
+  .nav-search input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    width: 140px;
+  }
+
+  .nav-search input::placeholder { color: var(--muted); }
+
+  /* HERO */
+  .hero {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 50% at 20% 60%, rgba(201,169,110,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 30%, rgba(143,181,160,0.05) 0%, transparent 60%);
+  }
+
+  .hero-content {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s ease forwards;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(72px, 12vw, 160px);
+    font-weight: 300;
+    line-height: 0.9;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.4s ease forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-top: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.7s ease forwards;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    animation: fadeIn 1.2s 1.2s ease forwards;
+    opacity: 0;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    animation: scrollPulse 2s 1.5s ease-in-out infinite;
+  }
+
+  /* FILTERS */
+  .filters-section {
+    padding: 60px 48px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .filter-pills {
+    display: flex;
+    gap: 8px;
+  }
+
+  .pill {
+    padding: 6px 18px;
+    border-radius: 100px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.25s;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+  }
+
+  .view-btn {
+    width: 32px; height: 32px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  .view-btn.active, .view-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* GALLERY GRID */
+  .gallery-section {
+    padding: 48px;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    transition: all 0.4s;
+  }
+
+  .gallery-grid.masonry {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .gallery-grid.list {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  /* GALLERY ITEM */
+  .gallery-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface);
+    animation: itemReveal 0.6s ease both;
+  }
+
+  .gallery-item:nth-child(1) { animation-delay: 0.05s; }
+  .gallery-item:nth-child(2) { animation-delay: 0.10s; }
+  .gallery-item:nth-child(3) { animation-delay: 0.15s; }
+  .gallery-item:nth-child(4) { animation-delay: 0.20s; }
+  .gallery-item:nth-child(5) { animation-delay: 0.25s; }
+  .gallery-item:nth-child(6) { animation-delay: 0.30s; }
+  .gallery-item:nth-child(7) { animation-delay: 0.35s; }
+  .gallery-item:nth-child(8) { animation-delay: 0.40s; }
+  .gallery-item:nth-child(9) { animation-delay: 0.45s; }
+  .gallery-item:nth-child(10) { animation-delay: 0.50s; }
+  .gallery-item:nth-child(11) { animation-delay: 0.55s; }
+  .gallery-item:nth-child(12) { animation-delay: 0.60s; }
+
+  /* Span large for featured items */
+  .gallery-item.featured { grid-column: span 2; grid-row: span 2; }
+  .gallery-item.wide { grid-column: span 2; }
+  .gallery-item.tall { grid-row: span 2; }
+
+  .item-img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: brightness(0.92) saturate(0.85);
+  }
+
+  .gallery-item.featured .item-img { height: 100%; min-height: 563px; }
+  .gallery-item.tall .item-img { height: 100%; min-height: 563px; }
+
+  .gallery-item:hover .item-img {
+    transform: scale(1.05);
+    filter: brightness(1) saturate(1);
+  }
+
+  .item-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10,10,8,0.85) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px;
+  }
+
+  .gallery-item:hover .item-overlay { opacity: 1; }
+
+  .item-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--white);
+    line-height: 1.2;
+    transform: translateY(10px);
+    transition: transform 0.35s ease;
+  }
+
+  .gallery-item:hover .item-title { transform: translateY(0); }
+
+  .item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    transform: translateY(10px);
+    transition: transform 0.35s 0.05s ease;
+    opacity: 0.8;
+  }
+
+  .gallery-item:hover .item-meta { transform: translateY(0); }
+
+  .item-tag {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .item-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+  }
+
+  .action-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+  /* LIST VIEW */
+  .gallery-grid.list .gallery-item { display: flex; height: 80px; }
+  .gallery-grid.list .item-img { width: 120px; height: 80px; flex-shrink: 0; }
+  .gallery-grid.list .item-overlay { position: relative; opacity: 1; background: none; flex: 1; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 20px; }
+  .gallery-grid.list .item-title { font-size: 15px; transform: none; }
+  .gallery-grid.list .item-meta { transform: none; margin-top: 0; }
+  .gallery-grid.list .gallery-item:hover { background: var(--surface); }
+  .gallery-grid.list .gallery-item:hover .item-img { transform: none; }
+
+  /* LIGHTBOX */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(10,10,8,0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    backdrop-filter: blur(8px);
+  }
+
+  .lightbox.open { opacity: 1; pointer-events: all; }
+
+  .lightbox-inner {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .lightbox-img-wrap {
+    position: relative;
+    transform: scale(0.92);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .lightbox.open .lightbox-img-wrap { transform: scale(1); }
+
+  .lightbox-img {
+    max-width: 65vw;
+    max-height: 85vh;
+    object-fit: contain;
+    display: block;
+    border-radius: 2px;
+  }
+
+  .lightbox-info {
+    width: 240px;
+    flex-shrink: 0;
+  }
+
+  .lb-category {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .lb-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 20px;
+  }
+
+  .lb-desc {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .lb-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 20px;
+  }
+
+  .lb-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .lb-stat { text-align: center; }
+  .lb-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent); }
+  .lb-stat-label { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+
+  .lb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border: 1px solid var(--accent);
+    background: none;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .lb-btn:hover { background: var(--accent); color: var(--bg); }
+
+  .lightbox-close {
+    position: fixed;
+    top: 24px; right: 32px;
+    width: 40px; height: 40px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .lightbox-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  .lightbox-nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px; height: 44px;
+    border: 1px solid var(--border);
+    background: rgba(10,10,8,0.6);
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+    border-radius: 2px;
+  }
+  .lightbox-nav:hover { border-color: var(--accent); color: var(--accent); }
+  .lb-prev { left: 16px; }
+  .lb-next { right: 16px; }
+
+  /* FOOTER */
+  footer {
+    margin-top: 80px;
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.12em; color: var(--muted); }
+  .footer-copy { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes itemReveal {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.3); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 18px 24px; }
+    .nav-links { display: none; }
+    .filters-section { padding: 40px 24px 28px; flex-wrap: wrap; gap: 16px; }
+    .gallery-section { padding: 24px; }
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    .gallery-item.featured { grid-column: span 2; }
+    .lightbox-info { display: none; }
+    .lightbox-img { max-width: 90vw; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">LUM<span>I</span>ÈRE</div>
+  <ul class="nav-links">
+    <li><a href="#">Curated</a></li>
+    <li><a href="#">Collections</a></li>
+    <li><a href="#">Artists</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <div class="nav-search">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#5a5850">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" placeholder="Search images...">
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">— Curated Visual Stories —</div>
+    <h1 class="hero-title">The Art of<br><em>Seeing</em></h1>
+    <p class="hero-sub">A gallery of extraordinary moments, captured in light.</p>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- FILTERS -->
+<section class="filters-section">
+  <span class="section-label">— 48 Images</span>
+  <div class="filter-pills">
+    <button class="pill active" onclick="filterGallery('all', this)">All</button>
+    <button class="pill" onclick="filterGallery('nature', this)">Nature</button>
+    <button class="pill" onclick="filterGallery('urban', this)">Urban</button>
+    <button class="pill" onclick="filterGallery('portrait', this)">Portrait</button>
+    <button class="pill" onclick="filterGallery('abstract', this)">Abstract</button>
+  </div>
+  <div class="view-toggle">
+    <button class="view-btn active" title="Grid" onclick="setView('grid', this)">⊞</button>
+    <button class="view-btn" title="Masonry" onclick="setView('masonry', this)">⊟</button>
+    <button class="view-btn" title="List" onclick="setView('list', this)">☰</button>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery-section">
+  <div class="gallery-grid" id="gallery"></div>
+</section>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button class="lightbox-nav lb-prev" onclick="navigateLightbox(-1)">‹</button>
+  <div class="lightbox-inner">
+    <div class="lightbox-img-wrap">
+      <img class="lightbox-img" id="lb-img" src="" alt="">
+    </div>
+    <div class="lightbox-info">
+      <div class="lb-category" id="lb-cat"></div>
+      <div class="lb-title" id="lb-title"></div>
+      <div class="lb-desc" id="lb-desc"></div>
+      <div class="lb-divider"></div>
+      <div class="lb-stats">
+        <div class="lb-stat"><div class="lb-stat-num" id="lb-views">—</div><div class="lb-stat-label">Views</div></div>
+        <div class="lb-stat"><div class="lb-stat-num" id="lb-likes">—</div><div class="lb-stat-label">Likes</div></div>
+        <div class="lb-stat"><div class="lb-stat-num" id="lb-saves">—</div><div class="lb-stat-label">Saves</div></div>
+      </div>
+      <button class="lb-btn">↓ Download Full Res</button>
+    </div>
+  </div>
+  <button class="lightbox-nav lb-next" onclick="navigateLightbox(1)">›</button>
+</div>
+
+<footer>
+  <div class="footer-logo">LUMIÈRE</div>
+  <div class="footer-copy">© 2026 Lumière Gallery · All rights reserved</div>
+</footer>
+
+<script>
+const images = [
+  { id:1, src:"https://picsum.photos/seed/a1/800/900", cat:"nature", title:"Morning Mist", desc:"Ethereal fog drifts through ancient cedar forests at golden hour.", views:"12.4K", likes:"834", saves:"291", class:"tall" },
+  { id:2, src:"https://picsum.photos/seed/b2/1200/700", cat:"urban", title:"City Pulse", desc:"The relentless rhythm of metropolitan life captured in a single frame.", views:"9.1K", likes:"612", saves:"188", class:"wide" },
+  { id:3, src:"https://picsum.photos/seed/c3/600/700", cat:"portrait", title:"Reverie", desc:"A fleeting moment of quiet contemplation in a world of noise.", views:"18.2K", likes:"1.2K", saves:"445", class:"" },
+  { id:4, src:"https://picsum.photos/seed/d4/700/800", cat:"abstract", title:"Chromatic Drift", desc:"Colours bleed and bloom in an exploration of pure sensation.", views:"7.6K", likes:"501", saves:"167", class:"" },
+  { id:5, src:"https://picsum.photos/seed/e5/1400/900", cat:"nature", title:"Horizon Burn", desc:"The sun surrenders to the sea in an explosion of amber and violet.", views:"22.8K", likes:"1.9K", saves:"703", class:"featured" },
+  { id:6, src:"https://picsum.photos/seed/f6/700/700", cat:"urban", title:"Glass & Steel", desc:"Architecture as sculpture — light bends through engineered canyons.", views:"11.3K", likes:"780", saves:"244", class:"" },
+  { id:7, src:"https://picsum.photos/seed/g7/700/700", cat:"portrait", title:"Solitude", desc:"In stillness, the most profound truths reveal themselves.", views:"15.5K", likes:"1.0K", saves:"389", class:"" },
+  { id:8, src:"https://picsum.photos/seed/h8/900/700", cat:"nature", title:"Deep Green", desc:"Ancient forests hold secrets only silence can unlock.", views:"8.9K", likes:"598", saves:"201", class:"wide" },
+  { id:9, src:"https://picsum.photos/seed/i9/700/900", cat:"abstract", title:"Void", desc:"Where form dissolves and only essence remains.", views:"6.4K", likes:"443", saves:"142", class:"" },
+  { id:10, src:"https://picsum.photos/seed/j10/700/700", cat:"urban", title:"Neon Rain", desc:"Wet cobblestones become mirrors for the city's electric dreams.", views:"20.1K", likes:"1.7K", saves:"598", class:"" },
+  { id:11, src:"https://picsum.photos/seed/k11/700/900", cat:"portrait", title:"The Gaze", desc:"Eyes that carry the weight of a thousand untold stories.", views:"14.3K", likes:"967", saves:"334", class:"" },
+  { id:12, src:"https://picsum.photos/seed/l12/700/700", cat:"nature", title:"First Light", desc:"Dawn breaks across mountain ridgelines like a slow revelation.", views:"16.7K", likes:"1.1K", saves:"412", class:"" },
+];
+
+let currentView = 'grid';
+let currentFilter = 'all';
+let currentIndex = 0;
+let filtered = [...images];
+
+function buildGallery() {
+  filtered = currentFilter === 'all' ? [...images] : images.filter(i => i.cat === currentFilter);
+  const grid = document.getElementById('gallery');
+  grid.innerHTML = '';
+  filtered.forEach((img, idx) => {
+    const item = document.createElement('div');
+    item.className = 'gallery-item ' + img.class;
+    item.innerHTML = `
+      <img class="item-img" src="${img.src}" alt="${img.title}" loading="lazy">
+      <div class="item-overlay">
+        <div class="item-title">${img.title}</div>
+        <div class="item-meta">
+          <span class="item-tag">${img.cat}</span>
+          <div class="item-actions">
+            <button class="action-btn" title="Like">♡</button>
+            <button class="action-btn" title="Save">⊕</button>
+            <button class="action-btn" title="Expand" onclick="openLightbox(${idx}); event.stopPropagation()">⤢</button>
+          </div>
+        </div>
+      </div>
+    `;
+    item.addEventListener('click', () => openLightbox(idx));
+    grid.appendChild(item);
+  });
+}
+
+function filterGallery(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  buildGallery();
+}
+
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const grid = document.getElementById('gallery');
+  grid.className = 'gallery-grid ' + (view === 'grid' ? '' : view);
+}
+
+function openLightbox(idx) {
+  currentIndex = idx;
+  const img = filtered[idx];
+  document.getElementById('lb-img').src = img.src;
+  document.getElementById('lb-title').textContent = img.title;
+  document.getElementById('lb-cat').textContent = '— ' + img.cat.toUpperCase();
+  document.getElementById('lb-desc').textContent = img.desc;
+  document.getElementById('lb-views').textContent = img.views;
+  document.getElementById('lb-likes').textContent = img.likes;
+  document.getElementById('lb-saves').textContent = img.saves;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function navigateLightbox(dir) {
+  currentIndex = (currentIndex + dir + filtered.length) % filtered.length;
+  openLightbox(currentIndex);
+}
+
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navigateLightbox(-1);
+  if (e.key === 'ArrowRight') navigateLightbox(1);
+});
+
+// Like / save button toggle
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('action-btn') && e.target.title === 'Like') {
+    e.target.textContent = e.target.textContent === '♡' ? '♥' : '♡';
+    e.target.style.background = e.target.textContent === '♥' ? '#c9a96e' : '';
+  }
+});
+
+buildGallery();
+</script>
+</body>
+</html>
